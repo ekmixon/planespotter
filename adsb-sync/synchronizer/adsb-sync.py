@@ -33,12 +33,12 @@ def adsb_stream(server, port, r_client):
         s.connect((server, port))
         s.settimeout(60)
     except (socket.gaierror, socket.timeout) as e:
-        return True, '\nadsb server connection fail: \n{}\n'.format(e.strerror)
+        return True, f'\nadsb server connection fail: \n{e.strerror}\n'
 
     last_read = ''
     last_repeated_len = 0
     len_saved = 0
-    print 'starting receiving data ...'
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     while True:
         chunks = []
         bytes_recd = 0
@@ -46,11 +46,11 @@ def adsb_stream(server, port, r_client):
             try:
                 chunk = s.recv(min(BUFSIZE - bytes_recd, 2048))
             except socket.timeout as e:
-                return None, '\nadsb connection fail: \n{}\n'.format(e.message)
+                return None, f'\nadsb connection fail: \n{e.message}\n'
             if chunk == b'':
                 return True, "adsb server socket connection broken"
             chunks.append(chunk)
-            bytes_recd = bytes_recd + len(chunk)
+            bytes_recd += len(chunk)
 #           print 'received {} bytes of data ...'.format(bytes_recd)
         last_read = last_read + b''.join(chunks)
 #       print 'current buffer size is {} ...'.format(len(last_read))
@@ -81,8 +81,7 @@ def get_one_aclist(in_string):
 def gen_icao_list(acft_json):
     acftdict = json.loads(acft_json)
     acft_list = acftdict.get('acList', None)
-    icao_list = [acft.get('Icao', None) for acft in acft_list]
-    return icao_list
+    return [acft.get('Icao', None) for acft in acft_list]
 
 
 def wr_icao_redis(icao_list, r_client, data_lifetime):
@@ -94,8 +93,8 @@ def wr_icao_redis(icao_list, r_client, data_lifetime):
         pipe.execute()
     except (redis.exceptions.ConnectionError,
             redis.exceptions.TimeoutError) as e:
-        return None, '\nredis connection fail: \n{}\n'.format(e.message)
-    print "wrote {} records into redis".format(len(icao_list))
+        return None, f'\nredis connection fail: \n{e.message}\n'
+    pipe = r_client.pipeline()
     return True, None
 
 

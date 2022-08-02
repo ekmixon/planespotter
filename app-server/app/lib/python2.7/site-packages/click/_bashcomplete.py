@@ -21,11 +21,16 @@ _invalid_ident_char_re = re.compile(r'[^a-zA-Z0-9_]')
 
 def get_completion_script(prog_name, complete_var):
     cf_name = _invalid_ident_char_re.sub('', prog_name.replace('-', '_'))
-    return (COMPLETION_SCRIPT % {
-        'complete_func': '_%s_completion' % cf_name,
-        'script_names': prog_name,
-        'autocomplete_var': complete_var,
-    }).strip() + ';'
+    return (
+        (
+            COMPLETION_SCRIPT
+            % {
+                'complete_func': f'_{cf_name}_completion',
+                'script_names': prog_name,
+                'autocomplete_var': complete_var,
+            }
+        )
+    ).strip() + ';'
 
 
 def resolve_ctx(cli, prog_name, args):

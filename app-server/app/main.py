@@ -10,10 +10,8 @@ pymysql.install_as_MySQLdb()
 app = Flask(__name__)
 app.config.from_pyfile('config/config.cfg')
 
-database_uri = 'mysql://{}:{}@{}/{}'.format(app.config['DATABASE_USER'],
-                                            app.config['DATABASE_PWD'],
-                                            app.config['DATABASE_URL'],
-                                            app.config['DATABASE'])
+database_uri = f"mysql://{app.config['DATABASE_USER']}:{app.config['DATABASE_PWD']}@{app.config['DATABASE_URL']}/{app.config['DATABASE']}"
+
 redis_server = app.config['REDIS_HOST']
 redis_port = app.config['REDIS_PORT']
 listen_port = int(app.config['LISTEN_PORT'])
@@ -96,9 +94,10 @@ def planedetails(icao):
     if not check_tcp_socket(adsb_server['host'], 80):
         return 'Connection to ADSB Exchange Server broken', 500
 
-    req = requests.get('https://{}{}{}{}'.format(adsb_server['host'],
-                                                 adsb_server['path'],
-                                                 adsb_server['query'], icao))
+    req = requests.get(
+        f"https://{adsb_server['host']}{adsb_server['path']}{adsb_server['query']}{icao}"
+    )
+
     try:
         ac_details = req.json()['acList'][0]
         return jsonify(ac_details)
@@ -111,10 +110,10 @@ def planepicture(icao):
     if not check_tcp_socket(airport_data_server['host'], 80):
         return 'Connection to Airport Data Server broken', 500
 
-    req = requests.get('http://{}{}{}{}'.format(airport_data_server['host'],
-                                                airport_data_server['path'],
-                                                airport_data_server['query'],
-                                                icao))
+    req = requests.get(
+        f"http://{airport_data_server['host']}{airport_data_server['path']}{airport_data_server['query']}{icao}"
+    )
+
     try:
         ac_pictures = req.json()['data'][0]
         return jsonify(ac_pictures)
@@ -159,10 +158,7 @@ def get_redis_key(icao):
                             int(app.config['REDIS_PORT']), s_timeout=0.5):
         return False
     airborne_state = r_client.hget(icao, "airborne")
-    if not airborne_state:
-        return False
-    else:
-        return True
+    return bool(airborne_state)
 
 
 manager = flask_restless.APIManager(app, flask_sqlalchemy_db=db)
